@@ -41,13 +41,16 @@ class ProductCreate(CreateAPIView):
         Values = ''
 
         if request.data.get('metrics') != None:
-            for i in request.data.get('metrics'):
+            Query = request.data.get('metrics')
+            if type(Query) == type(''):
+                Query = Query.split(',')
+            for i in Query:
                 try:
                     Value = Metric.objects.get(title=i)
                 except:
                     raise ValidationError({ 'Metrics': i + ' Metric Not found' })
-
-            Values = Metric.objects.filter(title__in=request.data.get('metrics'))
+                
+            Values = Metric.objects.filter(title__in=Query)
         product = Product.objects.create (title=request.data.get('title'), description=request.data.get('description') )
         product.metrics.set(Values)
         
@@ -80,7 +83,6 @@ class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
             if type(Query) == type(''):
                 Query = Query.split(',')
 
-            print(Query)
             Values = Metric.objects.filter(title__in=Query)
             if not list(Values):
                 return Response({"Metric": ', '.join(Query) + " Not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -91,13 +93,7 @@ class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
 
         instance.save()
     
-        from django.core.cache import cache
-        product = request.data
-        cache.set('product_data_{}'.format(instance.id), {
-            'title': product['title'],
-            'description': product['description'],
-        })
-        return Response(cache, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
 
 
 class MetricList(ListAPIView):
@@ -165,10 +161,6 @@ class IssueCreate(CreateAPIView):
                 raise ValidationError({ 'price': 'Must be above $0.00' })
         except ValueError:
             raise ValidationError({ 'title': 'A tilte/Name is required' })
-        try:
-            _ = Product.objects.get(title=request.data.get('products'))
-        except Product.DoesNotExist:
-            raise ValidationError({ 'Product': 'The Product Title sent is incorrect (No such Product exists)' })
 
         return super().create(request, *args, **kwargs)
 

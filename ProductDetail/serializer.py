@@ -71,9 +71,13 @@ class IssueSerializer(serializers.ModelSerializer):
         return obj.product.metrics.values_list('title', flat=True)
 
     def create(self, validated_data):
-
         #id_data=validated_data.pop('product')
-        Values = Product.objects.get(title=validated_data['product']['title'])
+        
+        try:
+            Values = Product.objects.get(title=validated_data['product']['title'])
+        except Product.DoesNotExist:
+            raise ValidationError({ 'Product': 'The Product Title sent is incorrect (No such Product exists)' })
+
         issue = Issue.objects.create (issueTitle=validated_data['issueTitle'],
         catagory=validated_data['catagory'])
         issue.save()
@@ -88,7 +92,6 @@ class IssueSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         
-        print(validated_data)
         Values = Product.objects.get(title=validated_data.pop('product')['title'])
         instance.product=Values
         
