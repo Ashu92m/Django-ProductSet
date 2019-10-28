@@ -20,13 +20,13 @@ import ProductDetail.views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('product/', ProductDetail.views.ProductList.as_view()),
-    path('product/add', ProductDetail.views.ProductCreate.as_view()),
-    path('product/<int:id>/', ProductDetail.views.ProductRetrieveUpdateDestroy.as_view()),
-    path('metric/', ProductDetail.views. MetricList.as_view()),
-    path('metric/add', ProductDetail.views. MetricCreate.as_view()),
-    path('metric/<int:id>/', ProductDetail.views.MetricRetrieveUpdateDestroy.as_view()),
-    path('issue/', ProductDetail.views.IssueList.as_view()),
-    path('issue/add', ProductDetail.views.IssueCreate.as_view()),
-    path('issue/<int:id>/', ProductDetail.views.IssueRetrieveUpdateDestroy.as_view())
+    path('api/v1/product/', ProductDetail.views.ProductList.as_view()),
+    path('api/v1/product/add', ProductDetail.views.ProductCreate.as_view()),
+    path('api/v1/product/<int:id>/', ProductDetail.views.ProductRetrieveUpdateDestroy.as_view()),
+    path('api/v1/metric/', ProductDetail.views.MetricList.as_view()),
+    path('api/v1/metric/add', ProductDetail.views.MetricCreate.as_view()),
+    path('api/v1/metric/<int:id>/', ProductDetail.views.MetricRetrieveUpdateDestroy.as_view()),
+    path('api/v1/issue/', ProductDetail.views.IssueList.as_view()),
+    path('api/v1/issue/add', ProductDetail.views.IssueCreate.as_view()),
+    path('api/v1/issue/<int:id>/', ProductDetail.views.IssueRetrieveUpdateDestroy.as_view())
 ]

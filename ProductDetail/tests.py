@@ -9,50 +9,43 @@ from rest_framework.test import APITestCase
 from ProductDetail.models import Product, Metric, Issue
 
 
-class MetricCreateTestCase(APITestCase):
+class MetricTestCase(APITestCase):
+
+    def setUp(self):
+        Metric.objects.create(title="Metric 10", description="Metric Number 10")
+        Metric.objects.create(title="Metric 12", description="Metric Number 11")
+
     def test_create_metric(self):
         initial_product_count = Metric.objects.count()
-        metric_attrs = {
-            'title': 'Metric 10',
-            'description': 'Metric Number 10',
-        }
-        response = self.client.post('/api/v1/metric/new', metric_attrs)
-
-        metric_attrs = {
-            'title': 'Metric 12',
-            'description': 'Metric Number 11',
-        }
-        response = self.client.post('/api/v1/metric/new', metric_attrs)
-
         metric_attrs = {
             'title': 'Metric 13',
             'description': 'Metric Number 13',
         }
-        response = self.client.post('/api/v1/metric/new', metric_attrs)
+        response = self.client.post('/api/v1/metric/add', metric_attrs)
+        if response.status_code != 201:
+            print(response.status_code)
 
         self.assertEqual(
             Metric.objects.count(),
-            initial_product_count + 3,
+            initial_product_count + 1,
         )
 
-class MetricUpdateTestCase(APITestCase):
     def test_update_metric(self):
-        metric = Metric.objects.get(title='Metric 12')
+        metric_id = Metric.objects.get(title='Metric 12').id
         response = self.client.patch(
-            '/api/v1/products/{}/'.format(metric.id),
+            '/api/v1/metric/{}/'.format(metric_id),
             {
                 'title': 'Metric 12',
                 'description': 'Metric Number 12',
             },
             format='json',
         )
-        updated = metric.objects.get(id=metric.id)
+        updated = Metric.objects.get(id=metric_id)
         self.assertEqual(updated.description, 'Metric Number 12')
-        
-class MetricDestroyTestCase(APITestCase):
+
     def test_delete_metric(self):
         initial_metric_count = Metric.objects.count()
-        metric_id = Metric.objects.get(title='Metric 13').id
+        metric_id = Metric.objects.get(title='Metric 10').id
         self.client.delete('/api/v1/metric/{}/'.format(metric_id))
         self.assertEqual(
             Metric.objects.count(),
@@ -63,28 +56,54 @@ class MetricDestroyTestCase(APITestCase):
             Metric.objects.get, id=metric_id,
         )
 
-class ProductCreateTestCase(APITestCase):
+
+
+class ProductTestCase(APITestCase):
+
+    def setUp(self):
+        metric1 = Metric.objects.create(title="Metric 10", description="Metric Number 10")
+        metric2 = Metric.objects.create(title="Metric 12", description="Metric Number 12")
+        metric3 = Metric.objects.create(title="Metric 13", description="Metric Number 13")
+        product1 = Product.objects.create(title="Product 1", description="Product Number 1")
+        product1.metrics.set([metric1,metric2])
+        product2= Product.objects.create(title="Product 2", description="Product Number 11")
+        product2.metrics.set([metric3,metric2])
+
     def test_create_product(self):
         initial_product_count = Product.objects.count()
         product_attrs = {
-            'title': 'New Product',
-            'description': 'Awesome product',
-            'metrics': ["Metric 10","Metric 12"],
+            "title": "Product 3",
+            "description": "Product Number 3",
+            "metrics": ["Metric 10", "Metric 12"],
         }
-        response = self.client.post('/api/v1/products/new', product_attrs)
+        response = self.client.post('/api/v1/product/add', product_attrs, format='json')
         if response.status_code != 201:
             print(response.data)
+
         self.assertEqual(
             Product.objects.count(),
             initial_product_count + 1,
         )
-        
 
-class ProductDestroyTestCase(APITestCase):
+    def test_update_product(self):
+        product_id = Product.objects.get(title='Product 2').id
+        product_attrs = {
+            "title": "Product 2",
+            "description": "Product Number 2",
+            "metrics": ["Metric 10"],
+        }
+        
+        response = self.client.put('/api/v1/product/{}/'.format(product_id), product_attrs)
+
+        if response.status_code != 201:
+            print(response.data)
+        updated = Product.objects.get(id=product_id)
+        self.assertEqual(updated.metrics.values('title'), 'Metric 10')
+
     def test_delete_product(self):
         initial_product_count = Product.objects.count()
-        product_id = Product.objects.get(title='New Product').id
-        self.client.delete('/api/v1/products/{}/'.format(product_id))
+        product_id = Product.objects.get(title='Product 2').id
+        self.client.delete('/api/v1/product/{}/'.format(product_id))
         self.assertEqual(
             Product.objects.count(),
             initial_product_count - 1,
@@ -94,26 +113,5 @@ class ProductDestroyTestCase(APITestCase):
             Product.objects.get, id=product_id,
         )
 
-class ProductListTestCase(APITestCase):
-    def test_list_products(self):
-        products_count = Product.objects.count()
-        response = self.client.get('/api/v1/products/')
-        self.assertIsNone(response.data['next'])
-        self.assertIsNone(response.data['previous'])
-        self.assertEqual(response.data['count'], products_count)
-        self.assertEqual(len(response.data['results']), products_count)
 
-class ProductUpdateTestCase(APITestCase):
-    def test_update_product(self):
-        product = Product.objects.get(title='New Product')
-        response = self.client.patch(
-            '/api/v1/products/{}/'.format(product.id),
-            {
-                'name': 'New Product',
-                'description': 'Awesome product',
-                'metrics': ["Metric 10"],
-            },
-            format='json',
-        )
-        updated = Product.objects.get(id=product.id)
-        self.assertEqual(updated.name, 'New Product')
+    

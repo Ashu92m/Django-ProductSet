@@ -37,22 +37,25 @@ class ProductCreate(CreateAPIView):
                 raise ValidationError({ 'title': 'A tilte/Name is required' })
         except ValueError:
             raise ValidationError({ 'title': 'A tilte/Name is required' })
-        
-        for i in request.data.get('metrics'):
-            try:
-                Value = Metric.objects.get(title=i)
-            except:
-                raise ValidationError({ 'Metrics': i + ' Metric Not found' })
 
-        Values = Metric.objects.filter(title__in=request.data.get('metrics'))
-        print(Values)
+        Values = ''
+
+        if request.data.get('metrics') != None:
+            for i in request.data.get('metrics'):
+                try:
+                    Value = Metric.objects.get(title=i)
+                except:
+                    raise ValidationError({ 'Metrics': i + ' Metric Not found' })
+
+            Values = Metric.objects.filter(title__in=request.data.get('metrics'))
         product = Product.objects.create (title=request.data.get('title'), description=request.data.get('description') )
-        product.save()
         product.metrics.set(Values)
         
         product.save()
         
-        return product
+        if Product.objects.get(title=request.data.get('title')) != None:
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
         
         
 class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
@@ -73,9 +76,14 @@ class ProductRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
         if request.data.get('metrics') == None:
             instance.metrics.set('')
         else:
-            Values = Metric.objects.filter(title__in=request.data.get('metrics'))
+            Query = request.data.get('metrics')
+            if type(Query) == type(''):
+                Query = Query.split(',')
+
+            print(Query)
+            Values = Metric.objects.filter(title__in=Query)
             if not list(Values):
-                return Response({"Metric": ', '.join(request.data.get('metrics')) + " Not found"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Metric": ', '.join(Query) + " Not found"}, status=status.HTTP_400_BAD_REQUEST)
             instance.metrics.set(Values)
 
         instance.title = request.data.get('title')
